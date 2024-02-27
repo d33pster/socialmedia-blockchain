@@ -12,6 +12,13 @@ def info(message: str):
 def success(message: str):
     print(Fore.GREEN, "INFO", Fore.RESET, f" : {message}")
 
+def create_multiple_users():
+    count = int(input(Fore.BLUE + "Number of users: " + Fore.RESET))
+    
+    for i in range(count):
+        print(Fore.BLACK, f":: User {i+1} ::", Fore.RESET)
+        createUser()
+
 def createUser():
     global Users
     currentCount = Users.count
@@ -43,7 +50,7 @@ def createUser():
     
     Users.add_block(Block(index=currentCount+1, timestamp=datetime.now(), data=new_user_data, previous_hash=""))
 
-def viewUsers():
+def viewUsersBlocks():
     global Users
     
     if Users.count == 0:
@@ -55,7 +62,7 @@ def viewUsers():
                 print(Fore.BLACK, "Name", Fore.RESET, f": {user.data['Name']}")
                 print(Fore.BLACK, "User ID", Fore.RESET, f": {user.data['userid']}")
                 print(Fore.BLACK, "Hash", Fore.RESET, f": {user.hash}")
-                print(Fore.BLACK, "Previous Hash", Fore.RESET, f": {user.previous_hash}")
+                print(Fore.BLACK, "Previous Hash", Fore.RESET, f": {user.previous_hash}\n")
 
 def login(passcheckcount=0):
     global Users, isloggedin, session_userid
@@ -77,14 +84,14 @@ def login(passcheckcount=0):
                                 session_userid = user_to_login.strip()
                                 isloggedin = True
                                 print(Fore.GREEN, "INFO", Fore.RESET, " : Successfully loggedin.")
-                                break
                             else:
-                                if passcheckcount == 3:
+                                if passcheckcount == 2:
                                     print(Fore.RED, "INFO", Fore.RESET, " : Login Failed.")
                                 else:
                                     passcheckcount += 1
                                     print(Fore.RED, "INFO", Fore.RESET, f" : {3-passcheckcount} Attempts remaining.")
                                     login(passcheckcount)
+                            break
                         else:
                             userfound = False
                 
@@ -105,6 +112,18 @@ def logout():
         isloggedin = False
         success(message=f"user {user_just_logged_out} logout successful.")
 
+def showUsers():
+    global Users, isloggedin, session_userid
+    
+    if Users.count == 0:
+        info("No users found.")
+    else:
+        for user in Users.chain:
+            if user.data["Name"] != "Genesis Block":
+                print(Fore.GREEN, f"User {user.index}", Fore.RESET)
+                print(Fore.BLACK, "Name", Fore.RESET, f" : {user.data['Name']}")
+                print(Fore.BLACK, "UserID", Fore.RESET, f" : {user.data['userid']}\n")
+
 def main():
     global Users
     run("clear")
@@ -113,8 +132,12 @@ def main():
         user_input = input(Fore.BLACK + "Command: " + Fore.RESET)
         if user_input.strip() == "create user":
             createUser()
+        elif user_input.strip() == "create users":
+            create_multiple_users()
+        elif user_input.strip() == "show user blocks":
+            viewUsersBlocks()
         elif user_input.strip() == "show users":
-            viewUsers()
+            showUsers()
         elif user_input.strip() == "login":
             login()
         elif user_input.strip() == "logout":
