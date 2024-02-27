@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+## Users data = {Name: "", userid: "", password: ""}
+## Friend_Transaction data = {Name: "", sentby: "", sentto: ""}
+
 from projectModules.Blockchain import Blockchain, Block
 from datetime import datetime
 from colorama import init as colorama_init, Fore
@@ -59,6 +62,7 @@ def viewUsersBlocks():
         for user in Users.chain:
             if user.data["Name"] != "Genesis Block":
                 print(Fore.GREEN, f"User Block : {user.index}", Fore.RESET)
+                print(Fore.BLACK, "Created", Fore.RESET, f": {user.timestamp}")
                 print(Fore.BLACK, "Name", Fore.RESET, f": {user.data['Name']}")
                 print(Fore.BLACK, "User ID", Fore.RESET, f": {user.data['userid']}")
                 print(Fore.BLACK, "Hash", Fore.RESET, f": {user.hash}")
@@ -127,6 +131,114 @@ def showUsers():
                 print(Fore.BLACK, "Name", Fore.RESET, f" : {user.data['Name']}")
                 print(Fore.BLACK, "UserID", Fore.RESET, f" : {user.data['userid']}\n")
 
+def sendFriendRequest(target: str):
+    global Users, Friend_Transactions, isloggedin, session_userid
+    
+    if not isloggedin:
+        info("login required.")
+    else:
+        # check for user
+        checkuser = False
+        for user in Users.chain:
+            if user.data["Name"] != "Genesis Block":
+                if user.data["userid"] == target:
+                    checkuser = True
+                    break
+        if checkuser:
+            # check for preexisting request ### NEED FIXING
+            data = {
+                "Name":"Friend Request",
+                "sentby":f"{session_userid}",
+                "sentto":f"{target}",
+                "accept":""
+            }
+            
+            Friend_Transactions.add_block(Block(index=Friend_Transactions.count+1, timestamp=datetime.now(), data=data, previous_hash=""))
+            
+            success(f"Friend Request Sent to @{target}.")
+        else:
+            info(f"user @{target} not found.")
+
+def showRequests():
+    global Friend_Transactions, isloggedin, session_userid
+    
+    if not isloggedin:
+        info("login required.")
+    else:
+        check = False
+        requestcount = 0
+        for transaction in Friend_Transactions.chain:
+            if transaction.data["Name"]!="Genesis Block" and transaction.data["sentto"]==session_userid and transaction.data["accept"]=="":
+                for allother in Friend_Transactions.chain:
+                    if allother.data["Name"]!="Genesis Block" and allother.index > transaction.index:
+                        if allother.data["sentto"] == transaction.data["sentto"]:
+                            if allother.data["accept"] == "yes" or allother.data["accept"]=="no":
+                                check = True
+                                break
+                        else:
+                            continue
+                
+                if not check:
+                    requestcount += 1
+                    info(f"Pending request from {transaction.data['sentby']}")
+        
+        if requestcount==0:
+            info("No requests at this time.")
+
+def handleRequest(target: str, status: bool):
+    global Users, Friend_Transactions, Friends, isloggedin, session_userid
+    
+    if not isloggedin:
+        info("login required.")
+    else:
+        # check if target exists or not
+        checkuser = False
+        for user in Users.chain:
+            if user.data["Name"] != "Genesis Block":
+                if user.data["userid"] == target:
+                    checkuser = True
+                    break
+        
+        # check if request is pending instead of checking if it exists or not
+        checkrequest = False
+        for transaction in Friend_Transactions.chain:
+            if transaction.data["Name"]!="Genesis Block" and transaction.data["sentby"]==target and transaction.data["sentto"]==session_userid and transaction.data["accept"]=="":
+                for allother in Friend_Transactions.chain:
+                    if allother.data["Name"]!="Genesis Block" and allother.index > transaction.index and allother.data["sentby"]==target and allother.data["sentto"]==session_userid:
+                        if allother.data["accept"]=="yes" or allother.data["accept"]=="no":
+                            checkrequest = True
+                            break
+            checkrequest = False
+        
+                            
+                            
+        if checkuser==True and checkrequest==False:
+            if status:
+                value = "yes"
+            else:
+                value = "no"
+            
+            data = {
+                "Name":"Friend Request",
+                "sentby":f"{target}",
+                "sentto":session_userid,
+                "accept":value
+            }
+            
+            Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data, ""))
+            success("Request Accepted")
+
+            if status:
+                data_for_Friends_Blockchain = {
+                    "Name":"Friend Status",
+                    "Member1":session_userid,
+                    "Member2":target
+                }
+                
+                Friends.add_block(Block(Friends.count+1, datetime.now(), data_for_Friends_Blockchain, ""))
+                success(f"You and {target} are now friends.")
+        
+
 def main():
     global Users
     run("clear")
@@ -145,6 +257,15 @@ def main():
             login()
         elif user_input.strip() == "logout":
             logout()
+        elif user_input.strip().split("@")[0] == "send request to ":
+            sendFriendRequest(user_input.strip().split("@")[1])
+        elif user_input.strip() == "show requests":
+            showRequests()
+        elif user_input.strip().split("@")[0]=="accept " or user_input.strip().split("@")[0]=="reject ":
+            if user_input.strip().split("@")[0]=="accept ":
+                handleRequest(user_input.strip().split("@")[1], True)
+            else:
+                handleRequest(user_input.strip().split("@")[1], False)
         elif user_input.strip() == "exit":
             exit()
         else:
@@ -152,7 +273,8 @@ def main():
 
 if __name__=="__main__":
     Users = Blockchain()
-    Friend_Transaction = Blockchain()
+    Friend_Transactions = Blockchain()
+    Friends = Blockchain()
     session_userid = ""
     isloggedin = False
     colorama_init()
