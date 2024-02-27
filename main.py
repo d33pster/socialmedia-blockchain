@@ -68,6 +68,39 @@ def viewUsersBlocks():
                 print(Fore.BLACK, "Hash", Fore.RESET, f": {user.hash}")
                 print(Fore.BLACK, "Previous Hash", Fore.RESET, f": {user.previous_hash}\n")
 
+def view_friend_transaction_blocks():
+    global Friend_Transactions
+    
+    if Friend_Transactions.count == 0:
+        print(Fore.RED, "INFO", Fore.RESET, " : No transaction Found.")
+    else:
+        for transaction in Friend_Transactions.chain:
+            if transaction.data["Name"] != "Genesis Block":
+                print(Fore.GREEN, f"Transaction Block : {transaction.index}", Fore.RESET)
+                print(Fore.BLACK, "Created", Fore.RESET, f": {transaction.timestamp}")
+                print(Fore.BLACK, "Name", Fore.RESET, f": {transaction.data['Name']}")
+                print(Fore.BLACK, "Sent by", Fore.RESET, f": {transaction.data['sentby']}")
+                print(Fore.BLACK, "Sent to", Fore.RESET, f": {transaction.data['sentto']}")
+                print(Fore.BLACK, "Accept Status", Fore.RESET, f": {transaction.data['accept']}")
+                print(Fore.BLACK, "Hash", Fore.RESET, f": {transaction.hash}")
+                print(Fore.BLACK, "Previous Hash", Fore.RESET, f": {transaction.previous_hash}\n")
+
+def view_friend_blocks():
+    global Friends
+    
+    if Friends.count == 0:
+        print(Fore.RED, "INFO", Fore.RESET, " : No Data Found.")
+    else:
+        for entry in Friends.chain:
+            if entry.data["Name"] != "Genesis Block":
+                print(Fore.GREEN, f"Transaction Block : {entry.index}", Fore.RESET)
+                print(Fore.BLACK, "Created", Fore.RESET, f": {entry.timestamp}")
+                print(Fore.BLACK, "Name", Fore.RESET, f": {entry.data['Name']}")
+                print(Fore.BLACK, "Person 1", Fore.RESET, f": {entry.data['Member1']}")
+                print(Fore.BLACK, "Person 2", Fore.RESET, f": {entry.data['Member2']}")
+                print(Fore.BLACK, "Hash", Fore.RESET, f": {entry.hash}")
+                print(Fore.BLACK, "Previous Hash", Fore.RESET, f": {entry.previous_hash}\n")
+
 def login(passcheckcount=0, userid=""):
     global Users, isloggedin, session_userid
     
@@ -253,6 +286,10 @@ def main():
             viewUsersBlocks()
         elif user_input.strip() == "show users":
             showUsers()
+        elif user_input.input() == "show transactions":
+            view_friend_transaction_blocks()
+        elif user_input.strip() == "show friend db":
+            view_friend_blocks()
         elif user_input.strip() == "login":
             login()
         elif user_input.strip() == "logout":
