@@ -64,14 +64,17 @@ def viewUsersBlocks():
                 print(Fore.BLACK, "Hash", Fore.RESET, f": {user.hash}")
                 print(Fore.BLACK, "Previous Hash", Fore.RESET, f": {user.previous_hash}\n")
 
-def login(passcheckcount=0):
+def login(passcheckcount=0, userid=""):
     global Users, isloggedin, session_userid
     
     if isloggedin:
         print(Fore.RED, "INFO", Fore.RESET, f" : user {session_userid} is currently logged in. Logout to continue.")
     else:
         if Users.count != 0:
-            user_to_login = input(Fore.BLUE + "userid: " + Fore.RESET)
+            if userid == "":
+                user_to_login = input(Fore.BLUE + "userid: " + Fore.RESET)
+            else:
+                user_to_login = userid
             
             userfound = False
             if user_to_login.strip() != "exit":
@@ -90,7 +93,7 @@ def login(passcheckcount=0):
                                 else:
                                     passcheckcount += 1
                                     print(Fore.RED, "INFO", Fore.RESET, f" : {3-passcheckcount} Attempts remaining.")
-                                    login(passcheckcount)
+                                    login(passcheckcount, user_to_login)
                             break
                         else:
                             userfound = False
