@@ -242,8 +242,6 @@ def handleRequest(target: str, status: bool):
                             checkrequest = True
                             break
             checkrequest = False
-        
-                            
                             
         if checkuser==True and checkrequest==False:
             if status:
@@ -270,7 +268,6 @@ def handleRequest(target: str, status: bool):
                 
                 Friends.add_block(Block(Friends.count+1, datetime.now(), data_for_Friends_Blockchain, ""))
                 success(f"You and {target} are now friends.")
-        
 
 def main():
     global Users
