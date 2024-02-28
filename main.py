@@ -93,7 +93,7 @@ def view_friend_blocks():
     else:
         for entry in Friends.chain:
             if entry.data["Name"] != "Genesis Block":
-                print(Fore.GREEN, f"Transaction Block : {entry.index}", Fore.RESET)
+                print(Fore.GREEN, f"Friend Block : {entry.index}", Fore.RESET)
                 print(Fore.BLACK, "Created", Fore.RESET, f": {entry.timestamp}")
                 print(Fore.BLACK, "Name", Fore.RESET, f": {entry.data['Name']}")
                 print(Fore.BLACK, "Person 1", Fore.RESET, f": {entry.data['Member1']}")
@@ -136,7 +136,7 @@ def login(passcheckcount=0, userid=""):
                             userfound = False
                 
                 if not userfound:
-                    info(message=f"{user_to_login} not found.")
+                    info(message=f"userid \"{user_to_login}\" not found.")
                     login()
         elif Users.count == 0:
             info("No Users are present.")
@@ -165,7 +165,7 @@ def showUsers():
                 print(Fore.BLACK, "UserID", Fore.RESET, f" : {user.data['userid']}\n")
 
 def sendFriendRequest(target: str):
-    global Users, Friend_Transactions, isloggedin, session_userid
+    global Users, Friend_Transactions, Friends, isloggedin, session_userid
     
     if not isloggedin:
         info("login required.")
@@ -178,17 +178,39 @@ def sendFriendRequest(target: str):
                     checkuser = True
                     break
         if checkuser:
-            # check for preexisting request ### NEED FIXING
-            data = {
-                "Name":"Friend Request",
-                "sentby":f"{session_userid}",
-                "sentto":f"{target}",
-                "accept":""
-            }
+            # check if already friends
+            check_already_friends = False
+            for status in Friends.chain:
+                if status.data['Name']!="Genesis Block":
+                    if (status.data['Member1']==session_userid and status.data['Member2']==target) or (status.data['Member1']==target and status.data['Member2']==session_userid):
+                        check_already_friends = True
             
-            Friend_Transactions.add_block(Block(index=Friend_Transactions.count+1, timestamp=datetime.now(), data=data, previous_hash=""))
-            
-            success(f"Friend Request Sent to @{target}.")
+            if check_already_friends == False:
+                # check if already request sent
+                pending = True
+                for transaction in Friend_Transactions.chain:
+                    if transaction.data['Name']!="Genesis Block" and transaction.data['sentby']==session_userid and transaction.data['sentto']==target:
+                        pending = True
+                        for allother in Friend_Transactions.chain:
+                            if allother.data['Name']!="Genesis Block" and allother.index > transaction.index:
+                                if allother.data['sentby']==session_userid and allother.data['sentto']==target and (allother.data['accept']=="yes" or allother.data['accept']=="no"):
+                                    pending = False
+                                    break
+                if pending==False or (pending==True and Friend_Transactions.count==0):
+                    data = {
+                        "Name":"Friend Request",
+                        "sentby":f"{session_userid}",
+                        "sentto":f"{target}",
+                        "accept":""
+                    }
+                    
+                    Friend_Transactions.add_block(Block(index=Friend_Transactions.count+1, timestamp=datetime.now(), data=data, previous_hash=""))
+                    
+                    success(f"Friend Request Sent to @{target}.")
+                else:
+                    info("Friend request already sent.")
+            else:
+                info(f"You and {target} are already friends")
         else:
             info(f"user @{target} not found.")
 
@@ -257,7 +279,10 @@ def handleRequest(target: str, status: bool):
             }
             
             Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data, ""))
-            success("Request Accepted")
+            if status:
+                success("Request Accepted")
+            else:
+                success("Request Rejected")
 
             if status:
                 data_for_Friends_Blockchain = {
@@ -283,7 +308,7 @@ def main():
             viewUsersBlocks()
         elif user_input.strip() == "show users":
             showUsers()
-        elif user_input.input() == "show transactions":
+        elif user_input.strip() == "show transactions":
             view_friend_transaction_blocks()
         elif user_input.strip() == "show friend db":
             view_friend_blocks()
@@ -298,7 +323,7 @@ def main():
         elif user_input.strip().split("@")[0]=="accept " or user_input.strip().split("@")[0]=="reject ":
             if user_input.strip().split("@")[0]=="accept ":
                 handleRequest(user_input.strip().split("@")[1], True)
-            else:
+            elif user_input.strip().split("@")[0]=="reject ":
                 handleRequest(user_input.strip().split("@")[1], False)
         elif user_input.strip() == "exit":
             exit()
