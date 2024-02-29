@@ -224,11 +224,14 @@ class generate:
         # set a frame for buttons
         self._navigation_frame = ttk.Frame(self._EnclosingFrame)
         self._navigation_frame.pack(fill=BOTH)
-        ## create navigation buttons ##
+        ## create navigation buttons  and labels ##
         # new post button
         self._new_post_button = ttk.Button(self._navigation_frame, text='New Post', default='active')
         self._new_post_button.pack(side=LEFT)
-        ## navigation buttons END ##
+        # create loggedin user label
+        self._currently_loggedin_label = ttk.Label(self._navigation_frame, text="loggedin: "+self._session_userid)
+        self._currently_loggedin_label.pack(side=RIGHT)
+        ## navigation buttons and labels END ##
         # reinit self.post_card
         self._post_cards = []
         # set a frame for scrollbar and posts
