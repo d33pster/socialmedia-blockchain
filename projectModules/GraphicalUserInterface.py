@@ -18,7 +18,7 @@ class generate:
         self._returntype = ""
         self.users = Blockchain()
         self.posts = Blockchain()
-        self.post_cards = []
+        self._post_cards = []
         self.key = Fernet.generate_key()
         self.fernet = Fernet(self.key)
         # get parent window
@@ -210,23 +210,27 @@ class generate:
             self.users.add_block(Block(self.users.count+1, datetime.now(), userdata, ""))
             self._register_error_text.set("Registered.")
             self._notebook.tab(0, state='normal')
+            ## register END ##
     
     def _proceed(self):
         self._reinitialize()
         # at this point user is logged in
         # change window size
-        self._parent.geometry("800x800+500+340")
+        self._parent.geometry("800x800+500+140")
         # go to feed.
         self._setup_feed()
     
     def _setup_feed(self):
         # set a frame for buttons
         self._navigation_frame = ttk.Frame(self._EnclosingFrame)
-        self._navigation_frame.pack(fill=BOTH, expand=True)
-        # create navigation buttons
-        self._create_post_button = ttk.Button(self._navigation_frame, text='New Post')
+        self._navigation_frame.pack(fill=BOTH)
+        ## create navigation buttons ##
+        # new post button
+        self._new_post_button = ttk.Button(self._navigation_frame, text='New Post', default='active')
+        self._new_post_button.pack(side=LEFT)
+        ## navigation buttons END ##
         # reinit self.post_card
-        self.post_cards = []
+        self._post_cards = []
         # set a frame for scrollbar and posts
         self._post_area = ttk.Frame(self._EnclosingFrame)
         self._post_area.pack(fill=BOTH, expand=True)
@@ -242,4 +246,12 @@ class generate:
                 temp_label.pack()
                 temp_post = ttk.Label(temp, text=post['content'])
                 temp_post.pack()
-                self.post_cards.append(temp)
+                self._post_cards.append(temp)
+
+        # display the posts
+        if len(self._post_cards)>0:
+            for postcard in self._post_cards:
+                postcard.pack()
+        else:
+            self._post_error_label = ttk.Label(self._post_area, text='No Posts yet.')
+            self._post_error_label.place(relx=0.5, rely=0.5, anchor='center')
