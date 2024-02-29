@@ -56,4 +56,5 @@ $ send request to @<userid> ## example: send request to @d33pster
 $ accept/reject @<userid> ## accept or reject request
 
 $ exit ## exit
+
 ```
