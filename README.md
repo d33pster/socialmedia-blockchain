@@ -2,6 +2,8 @@
 <p align='center'>:made by d33pster:</p>
 <p align='center'>
     <a href='#Commands'>Commands</a>
+    &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+    <a href='#GUI'>GUI</a>
 </p>
 
 #### About
@@ -56,5 +58,14 @@ $ send request to @<userid> ## example: send request to @d33pster
 $ accept/reject @<userid> ## accept or reject request
 
 $ exit ## exit
+```
 
+#### GUI
+```console
+## for gui in macos and linux, run commands
+$ chmod a+x ./socialmedia.py
+$ ./socialmedia.py
+
+## for gui in windows
+$ python socialmedia.py
 ```
