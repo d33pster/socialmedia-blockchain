@@ -226,16 +226,21 @@ class generate:
         self._navigation_frame.pack(fill=BOTH)
         ## create navigation buttons  and labels ##
         # new post button
-        self._new_post_button = ttk.Button(self._navigation_frame, text='New Post', default='active')
+        self._new_post_button = ttk.Button(self._navigation_frame, text='New Post', default='active', command=self._newpost)
         self._new_post_button.pack(side=LEFT)
-        # create loggedin user label
-        self._currently_loggedin_label = ttk.Label(self._navigation_frame, text="loggedin: "+self._session_userid)
-        self._currently_loggedin_label.pack(side=RIGHT)
+        # create a logout button
+        self._logout_button = ttk.Button(self._navigation_frame, text='logout', command=self._logout)
+        self._logout_button.pack(side=RIGHT)
+        # create loggedin user label in a new frame
+        self._loggedin_user_frame = ttk.Frame(self._EnclosingFrame)
+        self._loggedin_user_frame.pack(fill=BOTH)
+        self._currently_loggedin_label = ttk.Label(self._loggedin_user_frame, text="loggedin: "+self._session_userid)
+        self._currently_loggedin_label.pack()
         ## navigation buttons and labels END ##
         # reinit self.post_card
         self._post_cards = []
         # set a frame for scrollbar and posts
-        self._post_area = ttk.Frame(self._EnclosingFrame)
+        self._post_area = ttk.Frame(self._EnclosingFrame, relief='ridge')
         self._post_area.pack(fill=BOTH, expand=True)
         # set up scrollbar
         self._scrollbar = Scrollbar(self._post_area)
@@ -243,13 +248,14 @@ class generate:
         # find posts
         if self.posts.count>0:
             # create posts and store em in a list
-            for post in self.posts:
-                temp = ttk.Frame(self._post_area)
-                temp_label = ttk.Label(temp, text=post['user'])
-                temp_label.pack()
-                temp_post = ttk.Label(temp, text=post['content'])
-                temp_post.pack()
-                self._post_cards.append(temp)
+            for post in self.posts.chain:
+                if post.data['Name']!="Genesis Block":
+                    temp = ttk.Frame(self._post_area, relief='solid')
+                    temp_label = ttk.Label(temp, text="@"+post.data['user'])
+                    temp_label.pack(side=TOP)
+                    temp_post = ttk.Label(temp, text=post.data['content'])
+                    temp_post.pack(side=BOTTOM)
+                    self._post_cards.append(temp)
 
         # display the posts
         if len(self._post_cards)>0:
@@ -258,3 +264,52 @@ class generate:
         else:
             self._post_error_label = ttk.Label(self._post_area, text='No Posts yet.')
             self._post_error_label.place(relx=0.5, rely=0.5, anchor='center')
+    
+    def _newpost(self):
+        # reinitialise
+        self._reinitialize()
+        # change window size
+        self._parent.geometry("600x205+500+340")
+        # create a frame for input ## ==> later modify it into a notebook to post text/pictures
+        self._newpost_EnclosingFrame = ttk.Frame(self._EnclosingFrame)
+        self._newpost_EnclosingFrame.pack(fill=BOTH, expand=True)
+        # create a frame for label
+        self._newpost_frame_one = ttk.Frame(self._newpost_EnclosingFrame)
+        self._newpost_frame_one.pack(fill=BOTH)
+        # create a label
+        self._new_post_label = ttk.Label(self._newpost_frame_one, text="Create a Post:")
+        self._new_post_label.pack(side=LEFT)
+        # create a frame for textbox
+        self._newpost_frame_two = ttk.Frame(self._newpost_EnclosingFrame)
+        self._newpost_frame_two.pack(fill=BOTH)
+        # create textbox
+        self._newpost_textbox = Text(self._newpost_frame_two, blockcursor=True, relief='flat', height=10)
+        self._newpost_textbox.pack(fill=BOTH)
+        # create a frame for button and status label
+        self._newpost_frame_three = ttk.Frame(self._newpost_EnclosingFrame)
+        self._newpost_frame_three.pack(fill=BOTH)
+        # create a button
+        self._post_button = ttk.Button(self._newpost_frame_three, text='post', default='active', command=self._postButton)
+        self._post_button.pack(side=LEFT)
+        # create a string var for post status label
+        self._post_status = StringVar()
+        # create a label
+        self._post_status_label = ttk.Label(self._newpost_frame_three, textvariable=self._post_status)
+        self._post_status_label.pack(side=RIGHT)
+    
+    def _postButton(self):
+        post = {
+            "Name":"post",
+            "user":self._session_userid,
+            "content":self._newpost_textbox.get("1.0", END).strip()
+        }
+        self.posts.add_block(Block(self.posts.count+1, datetime.now(), post, ""))
+        self._post_status.set("Posted.")
+        self._parent.after(2000, self._proceed)
+    
+    def _logout(self):
+        self._reinitialize()
+        self._parent.geometry('600x225+500+340')
+        self._session_userid = ""
+        self._isloggedin = False
+        self._start()
