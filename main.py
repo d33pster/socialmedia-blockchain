@@ -8,6 +8,9 @@ from datetime import datetime
 from colorama import init as colorama_init, Fore
 from getpass import getpass
 from os import system as run
+import networkx as nx
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def info(message: str):
     print(Fore.RED, "INFO", Fore.RESET, f" : {message}")
@@ -123,6 +126,14 @@ def login(passcheckcount=0, userid=""):
                             if verify.data["password"] == password_for_user_to_login.strip():
                                 session_userid = user_to_login.strip()
                                 isloggedin = True
+                                # data = {
+                                #     "Name":"",
+                                #     "sentby":f"{session_userid}",
+                                #     "sentto":f"{target}",
+                                #     "accept":""
+                                # }
+                    
+                                # Friend_Transactions.add_block(Block(index=Friend_Transactions.count+1, timestamp=datetime.now(), data=data, previous_hash=""))
                                 print(Fore.GREEN, "INFO", Fore.RESET, " : Successfully loggedin.")
                             else:
                                 if passcheckcount == 2:
@@ -294,8 +305,50 @@ def handleRequest(target: str, status: bool):
                 Friends.add_block(Block(Friends.count+1, datetime.now(), data_for_Friends_Blockchain, ""))
                 success(f"You and {target} are now friends.")
 
+def connections():
+    global Friends, Users, cons
+    
+    numbers = {}
+    count = 1
+    for user in Users.chain:
+        if user.data["Name"]!="Genesis Block":
+            numbers[user.data["userid"]] = count
+            count += 1
+    
+    for transaction in Friends.chain:
+        if transaction.data['Name']!="Genesis Block":
+            data = (numbers[transaction.data['Member1']], numbers[transaction.data['Member2']])
+            cons.append(data)
+
+def graph():
+    connections()
+    
+    global cons
+    
+    X = nx.Graph()
+    X.add_edges_from(cons)
+    
+    pos = nx.spring_layout(X)
+    nx.draw(X, pos, with_labels=True)
+    plt.show()
+
+def graph_comm():
+    connections()
+    global cons
+    
+    X = nx.Graph()
+    X.add_edges_from(cons)
+    
+    communities = nx.community.label_propagation.label_propagation_communities(X)
+    community_mapping = {node: i for i, community in enumerate(communities) for node in community}
+    colors = [community_mapping[node] for node in X.nodes]
+    
+    pos = nx.spring_layout(X)
+    nx.draw(X, pos, with_labels=True, node_color=colors, cmap=plt.cm.rainbow)
+    plt.show()
+
 def main():
-    global Users
+    global Users, cons
     run("clear")
     print(Fore.MAGENTA, "-> Social BlockChain <-", Fore.RESET)
     while(True):
@@ -325,6 +378,13 @@ def main():
                 handleRequest(user_input.strip().split("@")[1], True)
             elif user_input.strip().split("@")[0]=="reject ":
                 handleRequest(user_input.strip().split("@")[1], False)
+        elif user_input.strip()=="show connections":
+            connections()
+            print(cons)
+        elif user_input.strip()=="show graph":
+            graph()
+        elif user_input.strip()=="show graph with community":
+            graph_comm()
         elif user_input.strip() == "exit":
             exit()
         else:
@@ -332,10 +392,175 @@ def main():
 
 if __name__=="__main__":
     Users = Blockchain()
+    
+    # add dummy users
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Bob",
+        "userid":"bob",
+        "password":"1234"
+    }, previous_hash=""))
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Tod",
+        "userid":"tod",
+        "password":"1234"
+    }, previous_hash=""))
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Robin",
+        "userid":"robin",
+        "password":"1234"
+    }, previous_hash=""))
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Ted",
+        "userid":"ted",
+        "password":"1234"
+    }, previous_hash=""))
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Barney",
+        "userid":"barnicle",
+        "password":"1234"
+    }, previous_hash=""))
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Marshal",
+        "userid":"marshal",
+        "password":"1234"
+    }, previous_hash=""))
+    Users.add_block(Block(Users.count+1, datetime.now(), data={
+        "Name":"Lily",
+        "userid":"lily",
+        "password":"1234"
+    }, previous_hash=""))
+    
+    
     Friend_Transactions = Blockchain()
+    
+    # dummy friend tansactions
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"bob",
+        "sentto":"tod",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"bob",
+        "sentto":"tod",
+        "accept":"yes"
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"bob",
+        "sentto":"robin",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"bob",
+        "sentto":"robin",
+        "accept":"yes"
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"robin",
+        "sentto":"tod",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"robin",
+        "sentto":"tod",
+        "accept":"yes"
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"ted",
+        "sentto":"barnicle",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"ted",
+        "sentto":"barnicle",
+        "accept":"yes"
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"ted",
+        "sentto":"marshal",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"ted",
+        "sentto":"marshal",
+        "accept":"yes"
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"marshal",
+        "sentto":"barnicle",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"marshal",
+        "sentto":"barnicle",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"lily",
+        "sentto":"ted",
+        "accept":""
+    }, previous_hash=""))
+    Friend_Transactions.add_block(Block(Friend_Transactions.count+1, datetime.now(), data={
+        "Name":"Friend Request",
+        "sentby":"lily",
+        "sentto":"ted",
+        "accept":"yes"
+    }, previous_hash=""))
+    
     Friends = Blockchain()
+    
+    # add dummy friends transactions
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"bob",
+        "Member2":"tod"
+    }, previous_hash=""))
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"bob",
+        "Member2":"robin"
+    }, previous_hash=""))
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"robin",
+        "Member2":"tod"
+    }, previous_hash=""))
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"ted",
+        "Member2":"barnicle"
+    }, previous_hash=""))
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"ted",
+        "Member2":"marshal"
+    }, previous_hash=""))
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"marshal",
+        "Member2":"barnicle"
+    }, previous_hash=""))
+    Friends.add_block(Block(Friends.count+1, datetime.now(), data={
+        "Name":"Friend Status",
+        "Member1":"lily",
+        "Member2":"ted"
+    }, previous_hash=""))
+    
     session_userid = ""
     isloggedin = False
+    cons: list[tuple] = []
     colorama_init()
     try:
         main()

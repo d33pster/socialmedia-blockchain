@@ -2,22 +2,40 @@
 
 from tkinter import *
 from tkinter import ttk
-from os.path import join
+from os.path import join, exists as there
 from PIL import ImageTk, Image
 from cryptography.fernet import Fernet
 from datetime import datetime
 from projectModules.Blockchain import Blockchain, Block
+from projectModules.client import client
 
 # class generate to initialize
 class generate:
     def __init__(self, master: Tk, _imagefolder: str):
         ## initialise ##
         # set variables
+        self._client = client()
         self._session_userid = ""
         self._isloggedin = False
         self._returntype = ""
         self.users = Blockchain()
         self.posts = Blockchain()
+        if there('chat.bak'):
+            with open('chat.bak', 'r') as bakfile:
+                content = bakfile.readlines()
+            
+            if len(content)>0:
+                for c in content:
+                    c = c.replace('\n', '')
+                    user = c.split(':')[0][1:]
+                    con = c.split(':')[1]
+                    data = {
+                        'Name':'post',
+                        'user':user,
+                        'content':con
+                    }
+                    self.posts.add_block(Block(self.posts.count+1, datetime.now(), data, ''))
+        
         self._post_cards = []
         self.key = Fernet.generate_key()
         self.fernet = Fernet(self.key)
@@ -228,6 +246,9 @@ class generate:
         # new post button
         self._new_post_button = ttk.Button(self._navigation_frame, text='New Post', default='active', command=self._newpost)
         self._new_post_button.pack(side=LEFT)
+        
+        self._refbutton = ttk.Button(self._navigation_frame, text='refresh', command=self._refbutton_)
+        self._refbutton.pack()
         # create a logout button
         self._logout_button = ttk.Button(self._navigation_frame, text='logout', command=self._logout)
         self._logout_button.pack(side=RIGHT)
@@ -240,7 +261,7 @@ class generate:
         # reinit self.post_card
         self._post_cards = []
         # set a frame for scrollbar and posts
-        self._post_area = ttk.Frame(self._EnclosingFrame, relief='ridge')
+        self._post_area = Listbox(self._EnclosingFrame)
         self._post_area.pack(fill=BOTH, expand=True)
         # set up scrollbar
         self._scrollbar = Scrollbar(self._post_area)
@@ -250,20 +271,35 @@ class generate:
             # create posts and store em in a list
             for post in self.posts.chain:
                 if post.data['Name']!="Genesis Block":
-                    temp = ttk.Frame(self._post_area, relief='solid')
-                    temp_label = ttk.Label(temp, text="@"+post.data['user'])
-                    temp_label.pack(side=TOP)
-                    temp_post = ttk.Label(temp, text=post.data['content'])
-                    temp_post.pack(side=BOTTOM)
+                    temp = '@' + post.data['user'] + ': ' + post.data['content']
                     self._post_cards.append(temp)
 
         # display the posts
         if len(self._post_cards)>0:
             for postcard in self._post_cards:
-                postcard.pack()
+                self._post_area.insert(END, postcard)
         else:
             self._post_error_label = ttk.Label(self._post_area, text='No Posts yet.')
             self._post_error_label.place(relx=0.5, rely=0.5, anchor='center')
+        
+    
+    def _refbutton_(self):
+        self.posts = Blockchain()
+        chatdata0 = self._client._refresh()
+        for chatdata in chatdata0:
+            chatdata = chatdata.replace('\n', '')
+            if chatdata == '' or chatdata==' ':
+                continue
+            user = chatdata.split(':')[0]
+            user = user[1:]
+            content = chatdata.split(':')[1]
+            post = {
+                "Name":"post",
+                "user":user,
+                "content":content
+            }
+            self.posts.add_block(Block(self.posts.count+1, datetime.now(), post, ''))
+            self._parent.after(1, self._proceed)
     
     def _newpost(self):
         # reinitialise
@@ -298,12 +334,22 @@ class generate:
         self._post_status_label.pack(side=RIGHT)
     
     def _postButton(self):
-        post = {
-            "Name":"post",
-            "user":self._session_userid,
-            "content":self._newpost_textbox.get("1.0", END).strip()
-        }
-        self.posts.add_block(Block(self.posts.count+1, datetime.now(), post, ""))
+        poststr = '@' + self._session_userid + ':' + self._newpost_textbox.get("1.0", END).strip()
+        self._chatdata = self._client._connect(poststr)
+        self.posts = Blockchain()
+        for chatdata in self._chatdata:
+            chatdata = chatdata.replace('\n', '')
+            if chatdata == '' or chatdata==' ':
+                continue
+            user = chatdata.split(':')[0]
+            user = user[1:]
+            content = chatdata.split(':')[1]
+            post = {
+                "Name":"post",
+                "user":user,
+                "content":content
+            }
+            self.posts.add_block(Block(self.posts.count+1, datetime.now(), post, ''))
         self._post_status.set("Posted.")
         self._parent.after(2000, self._proceed)
     
